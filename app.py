@@ -340,26 +340,42 @@ with tab1:
     st.header("Well Placement & Area Definition")
     
     # Load basemap or create blank canvas
-    import os
-    base_map_path = "Training_base_map.png"
+import os
+base_map_path = "Training_base_map.png"
 
-    if os.path.exists(base_map_path):
+# Try multiple possible locations for the image
+possible_paths = [
+    base_map_path,  # Current directory
+    os.path.join(os.path.dirname(__file__), base_map_path),  # Same directory as script
+    os.path.join(os.getcwd(), base_map_path),  # Working directory
+]
+
+image_loaded = False
+for path_to_try in possible_paths:
+    if os.path.exists(path_to_try):
         try:
-            original_image = Image.open(base_map_path)
+            original_image = Image.open(path_to_try)
             target_width = 1000
             scale = target_width / original_image.width
             scaled_height = int(original_image.height * scale)
             resized_image = original_image.resize((target_width, scaled_height))
+            image_loaded = True
+            st.success(f"✅ Base map loaded successfully")
+            break
         except Exception as e:
-            st.error(f"❌ Error loading image: {e}")
-            target_width = 1000
-            scaled_height = 666
-            resized_image = Image.new('RGB', (target_width, scaled_height), color='lightgray')
-    else:
-        st.warning(f"⚠️ Base map not found at {base_map_path}")
-        target_width = 1000
-        scaled_height = 666
-        resized_image = Image.new('RGB', (target_width, scaled_height), color='lightgray')
+            continue  # Try next path
+
+if not image_loaded:
+    st.warning(f"⚠️ Base map not found. Using blank canvas.")
+    st.info("""
+    **To add your background image:**
+    1. Upload `Training_base_map.png` to your GitHub repository (same directory as app.py)
+    2. Commit and push the changes
+    3. Streamlit Cloud will automatically redeploy
+    """)
+    target_width = 1000
+    scaled_height = 666
+    resized_image = Image.new('RGB', (target_width, scaled_height), color='lightgray')
 
     # Drawing mode selection
     col1, col2, col3 = st.columns([1, 1, 2])
