@@ -147,12 +147,12 @@ class Neuman_well:
                 #u /= (z2D-z1D)*(self.lD - self.dD)*np.sin(gamma)
 
                 idum1 += u
-                if abs(u) < 1e-9:
+                if abs(u) < 1e-7:
                     break
 
             dit = 4*y*jn(0, y*np.sqrt(Beta)) * idum1 * dy
             idum2 += dit
-            if abs(dit) < 1e-9:
+            if abs(dit) < 1e-7:
                 barry = False
 
         return self.Q/(4*np.pi*self.T) * idum2
