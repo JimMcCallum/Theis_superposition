@@ -333,6 +333,9 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📍 Add Wells & Areas", "🔬 Pumping 
 # ============================================================================
 # TAB 1: ADD WELLS AND POLYGONS - WITH REFRESH BUTTON
 # ============================================================================
+# ============================================================================
+# TAB 1: ADD WELLS AND POLYGONS - WITH REFRESH BUTTON
+# ============================================================================
 with tab1:
     st.header("Well Placement & Area Definition")
     
