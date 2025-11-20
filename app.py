@@ -490,6 +490,12 @@ else:
                 "fontWeight": "bold"
             })
 
+    # Debug: Display the image separately to verify it's working
+    st.markdown("### 🔍 Debug: Raw Image Display")
+    st.image(resized_image, caption="This should show your base map", use_container_width=True)
+    st.write(f"Resized image dimensions: {resized_image.size}")
+
+    st.write(f"🔍 DEBUG: About to pass image to canvas - Size: {resized_image.size}, Mode: {resized_image.mode}")
     # Canvas
     canvas_result = st_canvas(
         fill_color=selected_color,
