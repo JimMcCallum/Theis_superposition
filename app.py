@@ -25,13 +25,13 @@ NORTH_PIT_BENCHES = np.array([
     [3, 638],
     [3.2, 628],
     [3.4, 628],
+    [3.4, 618],
     [3.6, 618],
-    [3.8, 618],
-    [4., 608],
-    [4.2, 608],
+    [3.8, 608],
+    [4, 608],
+    [4.2, 598],
     [4.4, 598],
-    [4.6, 598],
-    [4.8, 588],
+    [4.6, 588],
     [15, 588]
 ])
 
@@ -1131,30 +1131,40 @@ with tab3:
     else:
         st.info("💡 Predict water table elevation in mine pits over time. Initial water table: {INITIAL_WATER_TABLE}m")
         
-        # Aquifer parameters
-        st.subheader("🌊 Analysis Parameters")
+        # Shared aquifer parameters (used in both Dewatering and Regional Impacts tabs)
+        st.subheader("🌊 Shared Aquifer Parameters")
+        st.info("💡 These parameters are shared between Dewatering and Regional Impacts tabs")
+        
         col1, col2, col3 = st.columns(3)
         with col1:
-            area_T = st.number_input("Transmissivity (T) [m²/day]", 
+            shared_T = st.number_input("Transmissivity (T) [m²/day]", 
                                      value=500.0, min_value=1.0, max_value=10000.0, step=10.0,
-                                     key="area_T")
+                                     key="shared_T",
+                                     help="Used in both Dewatering and Regional Impacts tabs")
         with col2:
-            area_S = st.number_input("Storativity (S)", 
+            shared_S = st.number_input("Storativity (S)", 
                                      value=0.0001, min_value=1e-6, max_value=0.5, 
                                      format="%.6f", step=1e-5,
-                                     key="area_S")
+                                     key="shared_S",
+                                     help="Used in both Dewatering and Regional Impacts tabs")
         with col3:
-            area_rwell = st.number_input("Well Radius [m]", 
+            shared_rwell = st.number_input("Well Radius [m]", 
                                          value=0.15, min_value=0.01, max_value=1.0, step=0.01,
-                                         key="area_rwell")
+                                         key="shared_rwell",
+                                         help="Used in both Dewatering and Regional Impacts tabs")
+        
+        # Store in session state for use in Regional Impacts tab
+        st.session_state['shared_T'] = shared_T
+        st.session_state['shared_S'] = shared_S
+        st.session_state['shared_rwell'] = shared_rwell
         
         # Time-series parameters
         st.subheader("⏱️ Time-Series Parameters")
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            area_end_time = st.number_input("End Time [days]", 
-                                            value=365.0, min_value=0.1, max_value=7300.0, step=10.0,
-                                            help="Duration of analysis period")
+            area_end_time = st.number_input("End Time [years]", 
+                                            value=20.0, min_value=0.1, max_value=100.0, step=1.0,
+                                            help="Duration of analysis period (max 100 years)")
         with col2:
             area_n_times = st.number_input("Number of Time Steps", 
                                            value=100, min_value=20, max_value=500, step=10,
@@ -1162,6 +1172,19 @@ with tab3:
         with col3:
             grid_density = st.slider("Grid Density", min_value=10, max_value=50, value=20, step=5,
                                      help="Number of grid points per area dimension")
+        with col4:
+            pit_delay = st.number_input("Pit Start Delay [years]",
+                                       value=0.0, min_value=0.0, max_value=20.0, step=0.5,
+                                       help="Delay before mining starts (shifts bench progression)")
+        
+        # Convert years to days for calculations
+        area_end_time_days = area_end_time * 365.25
+        pit_delay_days = pit_delay * 365.25
+        
+        # Use shared parameters
+        area_T = shared_T
+        area_S = shared_S  
+        area_rwell = shared_rwell
         
         # Well configuration
         st.subheader("🚰 Active Wells")
@@ -1303,8 +1326,8 @@ with tab3:
                         )
                         well_objects.append(well_obj)
                     
-                    # Create time array
-                    time_array = np.logspace(np.log10(0.01), np.log10(area_end_time), area_n_times)
+                    # Create time array (linear spacing in days)
+                    time_array = np.linspace(0.01, area_end_time_days, area_n_times)
                     
                     # Analyze each polygon over time
                     area_results = []
