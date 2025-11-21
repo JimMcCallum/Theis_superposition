@@ -360,7 +360,7 @@ PIXEL_TO_METER = 10.0
 if 'aquifer_properties' not in st.session_state:
     np.random.seed()
     st.session_state.aquifer_properties = {
-        'T': np.random.uniform(100, 2000),
+        'T': np.random.uniform(200, 800),
         'S': 10.**np.random.uniform(-3, -2),
         'Sy': np.random.uniform(0.01, 0.25),
         'b': np.random.uniform(20, 100),
@@ -811,7 +811,7 @@ with tab2:
                 st.info(f"ℹ️ Loaded previous fit for {pumping_well_key}")
             else:
                 init_T = 500.0
-                init_S = 1e-4
+                init_S = 1e-3
                 init_Q = Q
             
             col1, col2, col3 = st.columns(3)
@@ -819,8 +819,8 @@ with tab2:
             with col1:
                 fit_T = st.slider(
                     "Transmissivity (T) [m²/day]",
-                    min_value=10.0,
-                    max_value=5000.0,
+                    min_value=100.0,
+                    max_value=1000.0,
                     value=float(init_T),
                     step=10.0,
                     help="Adjust to match the slope of the curve"
@@ -1483,7 +1483,7 @@ with tab3:
                     bench_label = 'South Pit Bench Progression'
                 
                 if bench_data is not None:
-                    ax.plot(bench_data[:, 0], bench_data[:, 1], 
+                    ax.plot(bench_data[:, 0] + pit_delay, bench_data[:, 1], 
                            'o-', linewidth=3.5, markersize=10, color='red', 
                            label=bench_label, zorder=10, markeredgecolor='darkred', markeredgewidth=2)
                 
@@ -1541,10 +1541,10 @@ with tab3:
                                    alpha=0.15, color=colors[idx])
                 
                 # Add bench progression for both pits
-                ax.plot(NORTH_PIT_BENCHES[:, 0], NORTH_PIT_BENCHES[:, 1], 
+                ax.plot(NORTH_PIT_BENCHES[:, 0] + pit_delay, NORTH_PIT_BENCHES[:, 1], 
                        'o-', linewidth=3, markersize=9, color='red', 
                        label='North Pit Benches', zorder=10, markeredgecolor='darkred', markeredgewidth=1.5)
-                ax.plot(SOUTH_PIT_BENCHES[:, 0], SOUTH_PIT_BENCHES[:, 1], 
+                ax.plot(SOUTH_PIT_BENCHES[:, 0] + pit_delay, SOUTH_PIT_BENCHES[:, 1], 
                        's-', linewidth=3, markersize=9, color='orangered', 
                        label='South Pit Benches', zorder=10, markeredgecolor='darkred', markeredgewidth=1.5)
                 
