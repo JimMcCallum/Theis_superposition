@@ -1414,53 +1414,141 @@ with tab3:
             # Plot options
             col1, col2 = st.columns(2)
             with col1:
-                plot_scale = st.radio("Time axis scale:", ["Linear", "Log"], horizontal=True, index=1)
+                plot_scale = st.radio("Time axis scale:", ["Linear", "Log"], horizontal=True, index=0)  # Default to Linear
             with col2:
                 show_recovery_lines = st.checkbox("Show recovery events", value=True)
             
             # Get recovery events
             recovery_events = [w for w in analysis_wells if w.get('toff') is not None]
             
-            # Create plots - one per area
-            # Comparison plot - all areas on one plot
-            st.markdown("---")
-            st.subheader("📊 Area Comparison")
-            
-            fig, ax = plt.subplots(1, 1, figsize=(12, 7))
-            
-            colors = plt.cm.tab10(np.linspace(0, 1, len(area_results)))
-            
-            for idx, area_data in enumerate(area_results):
-                time_days = area_data['time']
-                time_years = time_days / 365.25
-                wt_mean = INITIAL_WATER_TABLE - area_data['mean_drawdown']
-                wt_min = INITIAL_WATER_TABLE - area_data['max_drawdown']
-                wt_max = INITIAL_WATER_TABLE - area_data['min_drawdown']
+            # Create individual plots for North and South pits only
+            for area_data in area_results:
+                area_name = area_data['name']
                 
-                ax.plot(time_years, wt_mean, '-', linewidth=2.5, 
-                       color=colors[idx], label=f"{area_data['name']} (Mean)", alpha=0.8)
+                # Skip the main pit extent - only plot North and South pits
+                if 'Max Extent' in area_name or 'Main Pit' in area_name:
+                    continue
+                
+                # Only plot if it's North or South Pit
+                if not (('North' in area_name and 'Pit' in area_name) or ('South' in area_name and 'Pit' in area_name)):
+                    continue
+                
+                fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+                
+                time_days = area_data['time']
+                time_years = time_days / 365.25  # Convert to years
+                
+                # Convert drawdown to water table elevation
+                wt_min = INITIAL_WATER_TABLE - area_data['max_drawdown']  # max drawdown = min water table
+                wt_mean = INITIAL_WATER_TABLE - area_data['mean_drawdown']
+                wt_max = INITIAL_WATER_TABLE - area_data['min_drawdown']  # min drawdown = max water table
+                
+                # Plot water table elevation
                 ax.fill_between(time_years, wt_min, wt_max, 
-                               alpha=0.15, color=colors[idx])
+                               alpha=0.2, color='steelblue', label='Min-Max Range')
+                ax.plot(time_years, wt_mean, '-', linewidth=3, color='darkblue', 
+                       label='Mean Water Table', zorder=5)
+                ax.plot(time_years, wt_min, '--', linewidth=2, color='steelblue', 
+                       alpha=0.7, label='Minimum', zorder=4)
+                ax.plot(time_years, wt_max, '--', linewidth=2, color='navy', 
+                       alpha=0.7, label='Maximum', zorder=4)
+                
+                # Add bench progression overlay
+                bench_data = None
+                if 'North' in area_name and 'Pit' in area_name:
+                    bench_data = NORTH_PIT_BENCHES
+                    bench_label = 'North Pit Bench Progression'
+                elif 'South' in area_name and 'Pit' in area_name:
+                    bench_data = SOUTH_PIT_BENCHES
+                    bench_label = 'South Pit Bench Progression'
+                
+                if bench_data is not None:
+                    ax.plot(bench_data[:, 0], bench_data[:, 1], 
+                           'o-', linewidth=3.5, markersize=10, color='red', 
+                           label=bench_label, zorder=10, markeredgecolor='darkred', markeredgewidth=2)
+                
+                # Add recovery event lines
+                if show_recovery_lines and recovery_events:
+                    for well in recovery_events:
+                        if well.get('toff') is not None:
+                            toff_years = well['toff'] / 365.25
+                            ax.axvline(x=toff_years, color='orange', linestyle='--', 
+                                     linewidth=2, alpha=0.6)
+                            ax.text(toff_years, ax.get_ylim()[1]*0.95, 
+                                   f"{well['label']}\nstops", 
+                                   rotation=90, va='top', ha='right', fontsize=9, color='orange',
+                                   bbox=dict(boxstyle='round,pad=0.4', facecolor='white', alpha=0.8))
+                
+                ax.set_xlabel('Time (years)', fontsize=13, fontweight='bold')
+                ax.set_ylabel('Water Table Elevation (m)', fontsize=13, fontweight='bold')
+                ax.set_title(f"{area_data['name']}: Water Table vs Bench Progression\n({area_data['area_m2']:.0f} m², {area_data['n_points']} sample points)", 
+                           fontsize=14, fontweight='bold')
+                ax.legend(loc='best', fontsize=11, framealpha=0.95)
+                ax.grid(True, alpha=0.3, which='both' if plot_scale == 'Log' else 'major')
+                
+                if plot_scale == 'Log':
+                    ax.set_xscale('log')
+                
+                plt.tight_layout()
+                st.pyplot(fig)
+                
+                # Add interpretation help
+                if bench_data is not None:
+                    st.info(f"💡 **Success criterion**: Water table (blue) must stay BELOW bench elevation (red) at all times!")
             
-            # Add recovery lines
-            if show_recovery_lines and recovery_events:
-                for well in recovery_events:
-                    if well.get('toff') is not None:
-                        toff_years = well['toff'] / 365.25
-                        ax.axvline(x=toff_years, color='orange', linestyle='--', 
-                                 linewidth=1.5, alpha=0.5)
+            # Comparison plot - all areas on one plot (optional, skip Main Pit)
+            st.markdown("---")
+            st.subheader("📊 North vs South Pit Comparison")
             
-            ax.set_xlabel('Time (years)', fontsize=12)
-            ax.set_ylabel('Mean Water Table Elevation (m)', fontsize=12)
-            ax.set_title('Comparison of Mean Water Table Elevation Across All Areas', fontsize=13, fontweight='bold')
-            ax.legend(loc='best', fontsize=10)
-            ax.grid(True, alpha=0.3, which='both' if plot_scale == 'Log' else 'major')
+            # Filter out main pit
+            pit_results = [r for r in area_results if not ('Max Extent' in r['name'] or 'Main Pit' in r['name'])]
             
-            if plot_scale == 'Log':
-                ax.set_xscale('log')
-            
-            plt.tight_layout()
-            st.pyplot(fig)
+            if len(pit_results) > 0:
+                fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+                
+                colors = plt.cm.tab10(np.linspace(0, 1, len(pit_results)))
+                
+                for idx, area_data in enumerate(pit_results):
+                    time_days = area_data['time']
+                    time_years = time_days / 365.25
+                    wt_mean = INITIAL_WATER_TABLE - area_data['mean_drawdown']
+                    wt_min = INITIAL_WATER_TABLE - area_data['max_drawdown']
+                    wt_max = INITIAL_WATER_TABLE - area_data['min_drawdown']
+                    
+                    ax.plot(time_years, wt_mean, '-', linewidth=3, 
+                           color=colors[idx], label=f"{area_data['name']} (Mean WT)", alpha=0.8, zorder=5)
+                    ax.fill_between(time_years, wt_min, wt_max, 
+                                   alpha=0.15, color=colors[idx])
+                
+                # Add bench progression for both pits
+                ax.plot(NORTH_PIT_BENCHES[:, 0], NORTH_PIT_BENCHES[:, 1], 
+                       'o-', linewidth=3, markersize=9, color='red', 
+                       label='North Pit Benches', zorder=10, markeredgecolor='darkred', markeredgewidth=1.5)
+                ax.plot(SOUTH_PIT_BENCHES[:, 0], SOUTH_PIT_BENCHES[:, 1], 
+                       's-', linewidth=3, markersize=9, color='orangered', 
+                       label='South Pit Benches', zorder=10, markeredgecolor='darkred', markeredgewidth=1.5)
+                
+                # Add recovery lines
+                if show_recovery_lines and recovery_events:
+                    for well in recovery_events:
+                        if well.get('toff') is not None:
+                            toff_years = well['toff'] / 365.25
+                            ax.axvline(x=toff_years, color='orange', linestyle='--', 
+                                     linewidth=2, alpha=0.5)
+                
+                ax.set_xlabel('Time (years)', fontsize=13, fontweight='bold')
+                ax.set_ylabel('Mean Water Table Elevation (m)', fontsize=13, fontweight='bold')
+                ax.set_title('Comparison: Water Table vs Bench Progression (Both Pits)', fontsize=14, fontweight='bold')
+                ax.legend(loc='best', fontsize=11, framealpha=0.95)
+                ax.grid(True, alpha=0.3, which='both' if plot_scale == 'Log' else 'major')
+                
+                if plot_scale == 'Log':
+                    ax.set_xscale('log')
+                
+                plt.tight_layout()
+                st.pyplot(fig)
+                
+                st.info("💡 **Visual check**: Water table lines (solid) should stay below bench progression markers at all times!")
             
             # Download results
             # Download results
@@ -1475,9 +1563,13 @@ with tab3:
                         'Area': area_data['name'],
                         'Area_m2': area_data['area_m2'],
                         'Time_days': t,
+                        'Time_years': t / 365.25,
                         'Min_Drawdown_m': area_data['min_drawdown'][i],
                         'Mean_Drawdown_m': area_data['mean_drawdown'][i],
-                        'Max_Drawdown_m': area_data['max_drawdown'][i]
+                        'Max_Drawdown_m': area_data['max_drawdown'][i],
+                        'Min_WaterTable_m': INITIAL_WATER_TABLE - area_data['max_drawdown'][i],
+                        'Mean_WaterTable_m': INITIAL_WATER_TABLE - area_data['mean_drawdown'][i],
+                        'Max_WaterTable_m': INITIAL_WATER_TABLE - area_data['min_drawdown'][i]
                     })
             
             results_df = pd.DataFrame(csv_data)
