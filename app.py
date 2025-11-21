@@ -9,6 +9,57 @@ from scipy.optimize import minimize
 from matplotlib.patches import Polygon as MPLPolygon
 
 # ============================================================================
+# BENCH PROGRESSION DATA FOR MINE DEWATERING
+# ============================================================================
+
+# North Pit bench progression (time in years, elevation in meters)
+NORTH_PIT_BENCHES = np.array([
+    [0, 678],
+    [0.5, 668],
+    [1, 668],
+    [1.4, 658],
+    [1.8, 658],
+    [2.1, 648],
+    [2.4, 648],
+    [2.7, 638],
+    [3, 638],
+    [3.2, 628],
+    [3.4, 628],
+    [3.4, 618],
+    [3.6, 618],
+    [3.8, 608],
+    [4, 608],
+    [4.2, 598],
+    [4.4, 598],
+    [4.6, 588],
+    [15, 588]
+])
+
+# South Pit bench progression (time in years, elevation in meters)
+SOUTH_PIT_BENCHES = np.array([
+    [0, 678],
+    [0.5, 668],
+    [1, 668],
+    [1.4, 658],
+    [1.8, 658],
+    [2.1, 648],
+    [2.4, 648],
+    [2.7, 638],
+    [3, 638],
+    [3.2, 628],
+    [10.2, 628],
+    [10.4, 618],
+    [10.6, 618],
+    [10.8, 608],
+    [11, 608],
+    [16, 608]
+])
+
+# Initial water table elevation (meters above datum)
+INITIAL_WATER_TABLE = 565.0
+
+
+# ============================================================================
 # WELL MODEL CLASSES
 # ============================================================================
 
@@ -328,7 +379,7 @@ if 'polygons' not in st.session_state:
     st.session_state.polygons = []
 
 # Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📍 Add Wells & Areas", "🔬 Pumping Test", "📊 Area Analysis", "⛏️ Mine Dewatering", "📚 Help & Theory"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📍 Add Wells & Areas", "🔬 Pumping Test", "⛏️ Dewatering", "🌍 Regional Impacts", "📚 Help & Theory"])
 
 # ============================================================================
 # ============================================================================
@@ -340,54 +391,54 @@ with tab1:
     # Define predefined areas of interest (in meters)
     if 'polygons' not in st.session_state or len(st.session_state.polygons) == 0:
         st.session_state.polygons = [
-{
-    "name": "Pit Max",
-    "points_meter": [
-        (856.2, 4488.2), (957.8, 4403.3), (1016.4, 4281.5), (1041.3, 4135.0),
-        (1041.4, 3976.2), (1025.9, 3817.7), (1003.1, 3669.7), (976.8, 3531.6),
-        (949.5, 3399.4), (923.5, 3268.7), (901.2, 3135.3), (884.2, 2996.9),
-        (871.1, 2855.9), (860.3, 2715.5), (850.2, 2579.0), (839.0, 2449.7),
-        (825.7, 2326.2), (810.7, 2200.7), (793.9, 2064.7), (775.6, 1910.0),
-        (755.7, 1729.8), (730.5, 1542.5), (693.1, 1386.3), (636.6, 1300.2),
-        (555.0, 1320.9), (463.5, 1435.8), (399.3, 1580.0), (374.8, 1718.1),
-        (370.9, 1852.5), (368.3, 1987.7), (362.5, 2125.0), (356.9, 2263.8),
-        (355.2, 2403.5), (361.0, 2543.5), (376.7, 2683.2), (400.2, 2821.8),
-        (427.8, 2958.8), (455.8, 3093.2), (480.3, 3224.4), (498.6, 3352.9),
-        (510.2, 3482.9), (514.9, 3619.0), (512.7, 3765.9), (503.7, 3927.9),
-        (493.3, 4100.3), (495.5, 4264.9), (524.2, 4402.8), (594.0, 4494.9),
-        (716.0, 4523.4), (856.2, 4488.2)
-    ],
-    "area_m2": 1406208,
-    "color": "#FF6B6B"
-},
-{
-    "name": "North Pit",
-    "points_meter": [
-        (579.3, 3698.5), (610.3, 3650.0), (623.7, 3575.3), (627.9, 3488.3),
-        (631.6, 3402.8), (643.4, 3332.8), (671.6, 3292.1), (723.9, 3293.7),
-        (788.5, 3335.7), (836.5, 3402.8), (845.4, 3480.3), (831.2, 3559.8),
-        (822.6, 3634.7), (848.4, 3698.5), (937.4, 3744.5), (936.8, 3863.1),
-        (941.6, 3969.3), (956.4, 4082.2), (953.6, 4203.7), (916.3, 4312.3),
-        (837.3, 4390.0), (722.6, 4423.6), (622.4, 4399.0), (569.9, 4313.9),
-        (559.7, 4188.2), (580.8, 4051.9), (603.1, 3939.2), (591.2, 3827.9)
-    ],
-    "area_m2": 325939,
-    "color": "#4169E1"
-},
-{
-    "name": "South Pit",
-    "points_meter": [
-        (439.7, 2061.5), (465.8, 1965.6), (464.2, 1888.6), (444.9, 1789.4),
-        (446.4, 1668.2), (488.0, 1532.7), (560.7, 1420.7), (629.4, 1399.9),
-        (674.8, 1484.6), (697.1, 1636.7), (693.4, 1808.0), (676.7, 1924.7),
-        (709.1, 2011.7), (736.7, 2126.6), (719.5, 2178.2), (711.4, 2251.6),
-        (706.9, 2335.5), (700.4, 2418.4), (686.4, 2489.0), (659.3, 2535.8),
-        (613.5, 2547.3), (550.8, 2517.1), (498.3, 2456.3), (484.5, 2379.7),
-        (493.2, 2300.5), (484.6, 2230.8), (418.5, 2182.9)
-    ],
-    "area_m2": 251257,
-    "color": "#228B22"
-}
+            {
+                "name": "Mine Pit Max Extent",
+                "points_meter": [
+                    (856.2, 4488.2), (957.8, 4403.3), (1016.4, 4281.5), (1041.3, 4135.0),
+                    (1041.4, 3976.2), (1025.9, 3817.7), (1003.1, 3669.7), (976.8, 3531.6),
+                    (949.5, 3399.4), (923.5, 3268.7), (901.2, 3135.3), (884.2, 2996.9),
+                    (871.1, 2855.9), (860.3, 2715.5), (850.2, 2579.0), (839.0, 2449.7),
+                    (825.7, 2326.2), (810.7, 2200.7), (793.9, 2064.7), (775.6, 1910.0),
+                    (755.7, 1729.8), (730.5, 1542.5), (693.1, 1386.3), (636.6, 1300.2),
+                    (555.0, 1320.9), (463.5, 1435.8), (399.3, 1580.0), (374.8, 1718.1),
+                    (370.9, 1852.5), (368.3, 1987.7), (362.5, 2125.0), (356.9, 2263.8),
+                    (355.2, 2403.5), (361.0, 2543.5), (376.7, 2683.2), (400.2, 2821.8),
+                    (427.8, 2958.8), (455.8, 3093.2), (480.3, 3224.4), (498.6, 3352.9),
+                    (510.2, 3482.9), (514.9, 3619.0), (512.7, 3765.9), (503.7, 3927.9),
+                    (493.3, 4100.3), (495.5, 4264.9), (524.2, 4402.8), (594.0, 4494.9),
+                    (716.0, 4523.4), (856.2, 4488.2)
+                ],
+                "area_m2": 1406208,
+                "color": "#FF6B6B"
+            },
+            {
+                "name": "North Pit",
+                "points_meter": [
+                    (579.3, 3698.5), (610.3, 3650.0), (623.7, 3575.3), (627.9, 3488.3),
+                    (631.6, 3402.8), (643.4, 3332.8), (671.6, 3292.1), (723.9, 3293.7),
+                    (788.5, 3335.7), (836.5, 3402.8), (845.4, 3480.3), (831.2, 3559.8),
+                    (822.6, 3634.7), (848.4, 3698.5), (937.4, 3744.5), (936.8, 3863.1),
+                    (941.6, 3969.3), (956.4, 4082.2), (953.6, 4203.7), (916.3, 4312.3),
+                    (837.3, 4390.0), (722.6, 4423.6), (622.4, 4399.0), (569.9, 4313.9),
+                    (559.7, 4188.2), (580.8, 4051.9), (603.1, 3939.2), (591.2, 3827.9)
+                ],
+                "area_m2": 325939,
+                "color": "#4169E1"
+            },
+            {
+                "name": "South Pit",
+                "points_meter": [
+                    (439.7, 2061.5), (465.8, 1965.6), (464.2, 1888.6), (444.9, 1789.4),
+                    (446.4, 1668.2), (488.0, 1532.7), (560.7, 1420.7), (629.4, 1399.9),
+                    (674.8, 1484.6), (697.1, 1636.7), (693.4, 1808.0), (676.7, 1924.7),
+                    (709.1, 2011.7), (736.7, 2126.6), (719.5, 2178.2), (711.4, 2251.6),
+                    (706.9, 2335.5), (700.4, 2418.4), (686.4, 2489.0), (659.3, 2535.8),
+                    (613.5, 2547.3), (550.8, 2517.1), (498.3, 2456.3), (484.5, 2379.7),
+                    (493.2, 2300.5), (484.6, 2230.8), (418.5, 2182.9)
+                ],
+                "area_m2": 251257,
+                "color": "#228B22"
+            }
         ]
     
     col1, col2 = st.columns([2, 1])
@@ -1073,12 +1124,12 @@ with tab2:
 # TAB 3: AREA ANALYSIS - WITH TIME-SERIES PLOTS
 # ============================================================================
 with tab3:
-    st.header("📊 Drawdown Analysis for Defined Areas")
+    st.header("⛏️ Mine Dewatering Analysis")
     
     if not st.session_state.polygons:
         st.warning("⚠️ No areas defined yet. Go to 'Add Wells & Areas' tab to draw polygons.")
     else:
-        st.info("💡 Evaluate drawdown evolution within defined areas from pumping/injection wells (with optional recovery).")
+        st.info("💡 Predict water table elevation in mine pits over time. Initial water table: {INITIAL_WATER_TABLE}m")
         
         # Aquifer parameters
         st.subheader("🌊 Analysis Parameters")
@@ -1358,7 +1409,7 @@ with tab3:
             
             # Time-series plots
             st.markdown("---")
-            st.subheader("📈 Drawdown Evolution Over Time")
+            st.subheader("📈 Water Table Elevation Over Time")
             
             # Plot options
             col1, col2 = st.columns(2)
@@ -1371,45 +1422,6 @@ with tab3:
             recovery_events = [w for w in analysis_wells if w.get('toff') is not None]
             
             # Create plots - one per area
-            for area_data in area_results:
-                fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-                
-                time = area_data['time']
-                
-                # Plot min, mean, max as filled area
-                ax.fill_between(time, area_data['min_drawdown'], area_data['max_drawdown'], 
-                               alpha=0.2, color='steelblue', label='Min-Max Range')
-                ax.plot(time, area_data['mean_drawdown'], '-', linewidth=2.5, color='darkblue', 
-                       label='Mean Drawdown')
-                ax.plot(time, area_data['min_drawdown'], '--', linewidth=1.5, color='steelblue', 
-                       alpha=0.7, label='Minimum')
-                ax.plot(time, area_data['max_drawdown'], '--', linewidth=1.5, color='navy', 
-                       alpha=0.7, label='Maximum')
-                
-                # Add recovery event lines
-                if show_recovery_lines and recovery_events:
-                    for well in recovery_events:
-                        if well.get('toff') is not None:
-                            ax.axvline(x=well['toff'], color='red', linestyle='--', 
-                                     linewidth=1.5, alpha=0.5)
-                            ax.text(well['toff'], ax.get_ylim()[1]*0.95, 
-                                   f"{well['label']}\nstops", 
-                                   rotation=90, va='top', ha='right', fontsize=8, color='red',
-                                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
-                
-                ax.set_xlabel('Time (days)', fontsize=12)
-                ax.set_ylabel('Drawdown (m)', fontsize=12)
-                ax.set_title(f"Area: {area_data['name']} ({area_data['area_m2']:.0f} m², {area_data['n_points']} sample points)", 
-                           fontsize=13, fontweight='bold')
-                ax.legend(loc='best', fontsize=10)
-                ax.grid(True, alpha=0.3, which='both' if plot_scale == 'Log' else 'major')
-                
-                if plot_scale == 'Log':
-                    ax.set_xscale('log')
-                
-                plt.tight_layout()
-                st.pyplot(fig)
-            
             # Comparison plot - all areas on one plot
             st.markdown("---")
             st.subheader("📊 Area Comparison")
@@ -1419,22 +1431,28 @@ with tab3:
             colors = plt.cm.tab10(np.linspace(0, 1, len(area_results)))
             
             for idx, area_data in enumerate(area_results):
-                time = area_data['time']
-                ax.plot(time, area_data['mean_drawdown'], '-', linewidth=2.5, 
+                time_days = area_data['time']
+                time_years = time_days / 365.25
+                wt_mean = INITIAL_WATER_TABLE - area_data['mean_drawdown']
+                wt_min = INITIAL_WATER_TABLE - area_data['max_drawdown']
+                wt_max = INITIAL_WATER_TABLE - area_data['min_drawdown']
+                
+                ax.plot(time_years, wt_mean, '-', linewidth=2.5, 
                        color=colors[idx], label=f"{area_data['name']} (Mean)", alpha=0.8)
-                ax.fill_between(time, area_data['min_drawdown'], area_data['max_drawdown'], 
+                ax.fill_between(time_years, wt_min, wt_max, 
                                alpha=0.15, color=colors[idx])
             
             # Add recovery lines
             if show_recovery_lines and recovery_events:
                 for well in recovery_events:
                     if well.get('toff') is not None:
-                        ax.axvline(x=well['toff'], color='red', linestyle='--', 
+                        toff_years = well['toff'] / 365.25
+                        ax.axvline(x=toff_years, color='orange', linestyle='--', 
                                  linewidth=1.5, alpha=0.5)
             
-            ax.set_xlabel('Time (days)', fontsize=12)
-            ax.set_ylabel('Mean Drawdown (m)', fontsize=12)
-            ax.set_title('Comparison of Mean Drawdown Across All Areas', fontsize=13, fontweight='bold')
+            ax.set_xlabel('Time (years)', fontsize=12)
+            ax.set_ylabel('Mean Water Table Elevation (m)', fontsize=12)
+            ax.set_title('Comparison of Mean Water Table Elevation Across All Areas', fontsize=13, fontweight='bold')
             ax.legend(loc='best', fontsize=10)
             ax.grid(True, alpha=0.3, which='both' if plot_scale == 'Log' else 'major')
             
@@ -1444,6 +1462,7 @@ with tab3:
             plt.tight_layout()
             st.pyplot(fig)
             
+            # Download results
             # Download results
             st.markdown("---")
             st.subheader("💾 Download Results")
@@ -1484,7 +1503,7 @@ with tab3:
 # TAB 4: MINE DEWATERING - COMPLETE WITH RECOVERY SUPPORT
 # ============================================================================
 with tab4:
-    st.header("⛏️ Mine Dewatering Analysis")
+    st.header("🌍 Regional Impacts Analysis")
     
     st.info("💡 Visualize drawdown maps and monitor specific locations over time from multiple active wells (with optional recovery phases)")
     
